@@ -2,7 +2,16 @@
 
 Streamt das Kamerabild eines Bambu-Lab-Druckers **zusammen mit dem Status-Overlay von Bambuddy** live zu **Twitch** und/oder **YouTube**. Gedacht für einen kleinen Debian-LXC auf Proxmox, Einstellungen und Steuerung laufen über ein passwortgeschütztes Webinterface.
 
-> Inoffizielles Hobbyprojekt, nicht mit Bambu Lab, Bambuddy, Twitch oder YouTube verbunden.
+> [!IMPORTANT]
+> ## 🙏 Dieses Projekt basiert auf Bambuddy
+> **Kamerastream und Overlay stammen aus [Bambuddy](https://github.com/maziggy/bambuddy)**, dem Projekt von **maziggy**. Ohne Bambuddy funktioniert dieses Tool nicht. Ein großes Dankeschön für die Arbeit!
+>
+> ⭐ **Schau beim Original vorbei und gib dem Projekt einen Stern: [github.com/maziggy/bambuddy](https://github.com/maziggy/bambuddy)**
+
+> [!NOTE]
+> **Erstellt mit Claude:** Dieses Projekt (Code, Installer und Dokumentation) wurde in Zusammenarbeit mit **[Claude](https://claude.ai)**, dem KI-Assistenten von Anthropic, entwickelt und vom Maintainer in der eigenen Umgebung getestet. Prüfe den Code vor dem Einsatz wie bei jedem fremden Skript, das mit Root-Rechten läuft.
+
+Inoffizielles Hobbyprojekt: nicht mit Bambu Lab, Twitch oder YouTube verbunden und kein offizieller Teil von Bambuddy.
 
 ## Funktionsweise
 
@@ -24,7 +33,7 @@ flowchart LR
 ## Voraussetzungen
 
 - Proxmox-LXC mit Debian 12 oder neuer, Zugriff als `root`
-- Laufende Bambuddy-Instanz, die vom LXC aus per HTTP erreichbar ist (Kamera-URL und Overlay-URL inklusive Token)
+- Laufende [Bambuddy](https://github.com/maziggy/bambuddy)-Instanz, die vom LXC aus per HTTP erreichbar ist (Kamera-URL und Overlay-URL inklusive Token)
 - Stream-Key von Twitch und/oder YouTube
 - Internetzugang im LXC (Installation und Streaming)
 
@@ -273,6 +282,12 @@ Auf dem LXC:
 | `/etc/bambu-twitch/config.env` | Einstellungen |
 | `/etc/bambu-twitch/web.json` | Passwort-Hash |
 | `/etc/systemd/system/bambu-twitch*.service` | systemd-Dienste |
+
+## Danksagung
+
+- **[Bambuddy](https://github.com/maziggy/bambuddy) von maziggy**: liefert den Kamerastream und das Overlay, auf denen dieses Projekt aufbaut.
+- **[Claude](https://claude.ai) von Anthropic**: Unterstützung bei Entwicklung und Dokumentation.
+- Eingesetzte Software: [ffmpeg](https://ffmpeg.org), [Playwright](https://playwright.dev) mit Chromium, [Flask](https://flask.palletsprojects.com) und [Waitress](https://docs.pylonsproject.org/projects/waitress/).
 
 ## Entwicklung
 
