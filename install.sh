@@ -109,6 +109,8 @@ ExecStart=$INSTALL_DIR/venv/bin/python $INSTALL_DIR/bambu_twitch.py
 Restart=always
 RestartSec=10
 TimeoutStopSec=15
+RuntimeDirectory=bambu-twitch
+RuntimeDirectoryPreserve=yes
 
 [Install]
 WantedBy=multi-user.target
@@ -125,6 +127,8 @@ Environment=BAMBU_WEB_PORT=$WEB_PORT
 ExecStart=$INSTALL_DIR/venv/bin/python $INSTALL_DIR/web.py
 Restart=always
 RestartSec=5
+RuntimeDirectory=bambu-twitch
+RuntimeDirectoryPreserve=yes
 
 [Install]
 WantedBy=multi-user.target

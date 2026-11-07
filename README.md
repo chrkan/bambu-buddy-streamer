@@ -106,6 +106,7 @@ Stream-Keys sind wie Passwörter: nicht veröffentlichen und bei Verdacht neu er
 | Bereich | Funktion |
 |---|---|
 | Status | Zustand des Stream-Dienstes, Autostart, Live-Log (aktualisiert alle 3 s, Tokens und Keys sind maskiert) |
+| Vorschau | Livebild mit Kamera und Overlay, genau so wie es an Twitch/YouTube gesendet wird (ca. 2 Bilder pro Sekunde, ohne Ton, ohne Verzögerung durch die Plattformen) |
 | Steuerung | Start, Stop, Neustart, Autostart an/aus |
 | Einstellungen | Alle Werte der Config, mit Validierung. Bereits gesetzte Keys werden nie wieder angezeigt |
 | Passwort | Ändern unter *Passwort ändern* |
@@ -136,10 +137,13 @@ Alle Werte liegen in `/etc/bambu-twitch/config.env` und lassen sich im Webinterf
 | `OVERLAY_FPS` | `5` | Aktualisierungen des Overlays pro Sekunde |
 | `VIDEO_BITRATE` | `3500k` | Video-Bitrate, Twitch erlaubt maximal ca. 6000k |
 | `X264_PRESET` | `veryfast` | Encoder-Preset, schneller = weniger CPU |
+| `PREVIEW_ENABLED` | `1` | Vorschaubild im Webinterface anzeigen |
 | `SILENT_AUDIO` | `1` | Stille Tonspur einmischen (Twitch verlangt Audio) |
 | `TWITCH_INGEST` | `rtmp://live.twitch.tv/app` | Twitch-Ingest-Server |
 | `YOUTUBE_INGEST` | `rtmp://a.rtmp.youtube.com/live2` | YouTube-Ingest-Server |
 | `RETRY_DELAY` | `10` | Sekunden bis zum Neustart nach einem Fehler |
+
+Weitere Variablen für die Vorschau (optional, von Hand in `config.env`): `PREVIEW_FPS` (Standard `2`) und `PREVIEW_FILE` (Standard `/run/bambu-twitch/preview.jpg`).
 
 Nur für die Fehlersuche (in `config.env` von Hand ergänzen):
 

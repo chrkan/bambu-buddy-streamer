@@ -19,8 +19,10 @@ from playwright.async_api import async_playwright
 
 # ---------- Konfiguration (aus Umgebungsvariablen / config.env) ----------
 # Beide kommen aus Bambuddy (alternativ auch CAMERA_URL / OVERLAY_URL)
-CAMERA_URL = os.environ.get("BAMBUDDY_CAMERA_URL") or os.environ["CAMERA_URL"]
-OVERLAY_URL = os.environ.get("BAMBUDDY_OVERLAY_URL") or os.environ["OVERLAY_URL"]
+CAMERA_URL = os.environ.get("BAMBUDDY_CAMERA_URL") or os.environ.get("CAMERA_URL") or ""
+OVERLAY_URL = os.environ.get("BAMBUDDY_OVERLAY_URL") or os.environ.get("OVERLAY_URL") or ""
+if not CAMERA_URL or not OVERLAY_URL:
+    sys.exit("Kamera-URL und/oder Overlay-URL fehlen. Bitte im Webinterface unter 'Quellen' eintragen und neu starten.")
 TWITCH_KEY = os.environ.get("TWITCH_STREAM_KEY", "")
 TWITCH_INGEST = os.environ.get("TWITCH_INGEST", "rtmp://live.twitch.tv/app")
 TWITCH_ENABLED = os.environ.get("TWITCH_ENABLED", "1") == "1"
@@ -36,6 +38,10 @@ OVERLAY_FPS = int(os.environ.get("OVERLAY_FPS", "5"))   # Overlay muss nicht 30 
 VIDEO_BITRATE = os.environ.get("VIDEO_BITRATE", "3500k")
 X264_PRESET = os.environ.get("X264_PRESET", "veryfast")
 # Optional: Hardware-Encoder statt libx264 (z.B. h264_vaapi braucht /dev/dri im LXC)
+# Vorschaubild für das Webinterface (kleines JPEG, wird laufend überschrieben)
+PREVIEW_ENABLED = os.environ.get("PREVIEW_ENABLED", "1") == "1"
+PREVIEW_FILE = os.environ.get("PREVIEW_FILE", "/run/bambu-twitch/preview.jpg")
+PREVIEW_FPS = os.environ.get("PREVIEW_FPS", "2")
 # Diagnose: OUTPUT_URL=/tmp/test.flv schreibt 20 s in eine Datei statt zu Twitch
 OUTPUT_URL = os.environ.get("OUTPUT_URL", "")
 FFMPEG_LOGLEVEL = os.environ.get("FFMPEG_LOGLEVEL", "warning")
@@ -89,11 +95,17 @@ def build_ffmpeg_cmd() -> list[str]:
     if SILENT_AUDIO:
         cmd += ["-re", "-f", "lavfi", "-i", "anullsrc=channel_layout=stereo:sample_rate=44100"]
 
+    use_preview = PREVIEW_ENABLED and not OUTPUT_URL
+    if use_preview:
+        end = ("format=yuv420p,split=2[out][pv0];"
+               f"[pv0]fps={PREVIEW_FPS},scale=640:-2,format=yuvj420p[pv]")
+    else:
+        end = "format=yuv420p[out]"
     filter_complex = (
         f"[0:v]scale={WIDTH}:{HEIGHT}:force_original_aspect_ratio=decrease,"
         f"pad={WIDTH}:{HEIGHT}:(ow-iw)/2:(oh-ih)/2:black,fps={FPS},setsar=1[bg];"
         f"[1:v]format=rgba,scale={WIDTH}:{HEIGHT}[ov];"
-        f"[bg][ov]overlay=0:0:eof_action=repeat:format=auto,format=yuv420p[out]"
+        f"[bg][ov]overlay=0:0:eof_action=repeat:format=auto,{end}"
     )
 
     cmd += [
@@ -121,7 +133,11 @@ def build_ffmpeg_cmd() -> list[str]:
         else:
             # tee-Muxer: ein Encoder, mehrere Ziele; fällt eines aus, läuft das andere weiter
             tee = "|".join(f"[f=flv:onfail=ignore]{t}" for t in targets)
-            cmd += ["-f", "tee", tee]
+            cmd += ["-flags", "+global_header", "-f", "tee", tee]
+    if use_preview:
+        os.makedirs(os.path.dirname(PREVIEW_FILE), exist_ok=True)
+        cmd += ["-map", "[pv]", "-an", "-c:v", "mjpeg", "-q:v", "6",
+                "-update", "1", "-atomic_writing", "1", "-f", "image2", PREVIEW_FILE]
     return cmd
 
 

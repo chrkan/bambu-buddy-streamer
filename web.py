@@ -11,7 +11,7 @@ import time
 from datetime import timedelta
 from pathlib import Path
 
-from flask import (Flask, abort, flash, jsonify, redirect, render_template,
+from flask import (Flask, Response, abort, flash, jsonify, redirect, render_template,
                    request, session, url_for)
 from jinja2 import DictLoader
 from werkzeug.security import check_password_hash, generate_password_hash
@@ -22,6 +22,7 @@ AUTH_FILE = CONF_DIR / "web.json"
 SECRET_FILE = CONF_DIR / "web_secret"
 SERVICE = os.environ.get("BAMBU_SERVICE", "bambu-twitch")
 PORT = int(os.environ.get("BAMBU_WEB_PORT", "8080"))
+PREVIEW_FILE = Path(os.environ.get("PREVIEW_FILE", "/run/bambu-twitch/preview.jpg"))
 PRESETS = ["ultrafast", "superfast", "veryfast", "faster", "fast", "medium"]
 
 FIELDS = [
@@ -47,6 +48,8 @@ FIELDS = [
         dict(k="VIDEO_BITRATE", label="Video-Bitrate", t="rate", d="3500k", help="z. B. 3500k, Twitch maximal 6000k"),
         dict(k="X264_PRESET", label="x264-Preset", t="select", d="veryfast",
              help="schneller = weniger CPU, schlechtere Qualität"),
+        dict(k="PREVIEW_ENABLED", label="Vorschau im Webinterface", t="bool", d="1",
+             help="Zeigt das gesendete Bild (ca. 2 Bilder pro Sekunde)"),
         dict(k="SILENT_AUDIO", label="Stille Tonspur einmischen", t="bool", d="1",
              help="Twitch verlangt eine Tonspur"),
     ]),
@@ -267,6 +270,17 @@ def index():
     return render_index()
 
 
+@app.get("/preview.jpg")
+def preview():
+    try:
+        if time.time() - PREVIEW_FILE.stat().st_mtime > 15:
+            abort(404)
+        data = PREVIEW_FILE.read_bytes()
+    except OSError:
+        abort(404)
+    return Response(data, mimetype="image/jpeg")
+
+
 @app.get("/api/status")
 def api_status():
     return jsonify(status())
@@ -367,7 +381,8 @@ TEMPLATES = {
 <form method="post" action="/service" class="row"><input type="hidden" name="csrf" value="{{ csrf() }}">
 <button name="a" value="start">Start</button><button name="a" value="stop">Stop</button>
 <button name="a" value="restart">Neustart</button><button name="a" value="enable">Autostart an</button>
-<button name="a" value="disable">Autostart aus</button></form><pre id="log"></pre></section>
+<button name="a" value="disable">Autostart aus</button></form><img id="pv" alt="Vorschau" style="display:none;width:100%;border-radius:8px;margin-top:8px">
+<pre id="log"></pre></section>
 <form method="post" action="/save"><input type="hidden" name="csrf" value="{{ csrf() }}">
 {% for title, fields in groups %}<fieldset><legend>{{ title }}</legend>
 {% for f in fields %}{% set k = f.k %}
@@ -392,8 +407,10 @@ const $=id=>document.getElementById(id);
 async function poll(){try{const r=await fetch('/api/status');if(r.status===401){location='/login';return}
 const d=await r.json();$('state').textContent=d.state;$('dot').className='dot '+d.state;
 $('since').textContent=d.since?'seit '+d.since:'';$('en').textContent='Autostart: '+d.enabled;
+const pv=$('pv');if(d.state==='active'){pv.src='/preview.jpg?t='+Date.now()}else{pv.style.display='none'}
 const l=$('log'),end=l.scrollTop+l.clientHeight>=l.scrollHeight-20;l.textContent=d.log;if(end)l.scrollTop=l.scrollHeight}catch(e){}}
-poll();setInterval(poll,3000);</script>{% endblock %}""",
+$('pv').onload=()=>{$('pv').style.display='block'};$('pv').onerror=()=>{$('pv').style.display='none'};
+poll();setInterval(poll,2000);</script>{% endblock %}""",
 }
 app.jinja_loader = DictLoader(TEMPLATES)
 
